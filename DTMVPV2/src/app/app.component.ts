@@ -128,32 +128,23 @@ export class AppComponent {
     this.showQR = false;
   }
 
-  downloadPatientInfo() {
-    if (this.patientData) {
-      this.http.get(`http://localhost:8080/pacientes/info-pdf/${this.patientData.numeroSeguridadSocial}`, 
-      //this.http.get(`http://localhost:8080/pacientes/encrypted-info/${this.patientData.numeroSeguridadSocial}`, 
-      { responseType: 'blob' })
-        .subscribe({
-          next: (response) => {
-            const blob = new Blob([response], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            const today = new Date();
-            const day = today.getDate();
-            const month = today.toLocaleString('es-ES', { month: 'short' });
-            const year = today.getFullYear();
-            const formattedDate = `${day}-${month}-${year}`;
-            console.log(formattedDate);
-            link.download = `Paciente_${this.patientData?.nombre}_${this.patientData?.numeroSeguridadSocial}_${formattedDate}.pdf`;
-            link.click();
-            window.URL.revokeObjectURL(url);
-          },
-          error: (error) => {
-            console.error('Error al descargar el PDF:', error);
-            alert('Error al descargar la información del paciente');
-          }
-        });
-    }
+  downloadQR() {
+    // Get the QR code elements
+    const qrElements = document.querySelectorAll('qrcode canvas');
+    const today = new Date();
+    const day = today.getDate();
+    const month = today.toLocaleString('es-ES', { month: 'short' });
+    const year = today.getFullYear();
+    const formattedDate = `${day}-${month}-${year}`;
+
+    // Download each QR code
+    qrElements.forEach((qrElement, index) => {
+      const canvas = qrElement as HTMLCanvasElement;
+      const link = document.createElement('a');
+      const qrType = index === 0 ? 'DatosPaciente' : 'EstudiosPaciente';
+      link.download = `QR_${this.patientData?.nombre}_${this.patientData?.numeroSeguridadSocial}_${qrType}_${formattedDate}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
   }
 }
