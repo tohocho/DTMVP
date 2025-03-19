@@ -193,7 +193,7 @@ export class AppComponent {
       error: (error) => {
         // Si no existe el paciente, proceder a guardarlo
         if (error.status === 404) {
-          this.http.post('http://localhost:8080/pacientes/guardar', this.newPatient)
+          this.http.post('http://localhost:8080/pacientes/pacienteGuardar', this.newPatient)
             .subscribe({
               next: (response) => {
                 alert('Paciente registrado exitosamente');
