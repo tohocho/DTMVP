@@ -182,19 +182,35 @@ export class AppComponent {
     };
   }
   submitNewPatient() {
-    console.log(this.newPatient);
-    this.http.post('http://localhost:8080/pacientes/guardar', this.newPatient)
-      .subscribe({
-        next: (response) => {
-          alert('Paciente registrado exitosamente');
-          this.isNewPatientFormVisible = false;
-          this.cancelNewPatient();
-        },
-        error: (error) => {
-          console.error('Error al registrar paciente:', error);
-          alert('Error al registrar el paciente');
+    const nss = this.newPatient.numeroSeguridadSocial;
+    
+    // Primero verificar si el paciente existe
+    this.http.get(`http://localhost:8080/pacientes/${nss}`).subscribe({
+      next: (existingPatient) => {
+        alert('Ya existe un paciente con este número de seguridad social');
+      this.cancelNewPatient();
+      },
+      error: (error) => {
+        // Si no existe el paciente, proceder a guardarlo
+        if (error.status === 404) {
+          this.http.post('http://localhost:8080/pacientes/guardar', this.newPatient)
+            .subscribe({
+              next: (response) => {
+                alert('Paciente registrado exitosamente');
+                this.isNewPatientFormVisible = false;
+                this.cancelNewPatient();
+              },
+              error: (error) => {
+                console.error('Error al registrar paciente:', error);
+                alert('Error al registrar el paciente');
+              }
+            });
+        } else {
+          console.error('Error al verificar paciente:', error);
+          alert('Error al verificar el paciente');
         }
-      });
+      }
+    });
   }
 
 }
