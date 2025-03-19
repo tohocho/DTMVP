@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpClientModule, HttpHeaders, HttpParams } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { QRCodeComponent } from 'angularx-qrcode';
@@ -181,9 +181,9 @@ export class AppComponent {
       tipoSangre: ''
     };
   }
-
   submitNewPatient() {
-    this.http.post('http://localhost:8080/pacientes', this.newPatient)
+    console.log(this.newPatient);
+    this.http.post('http://localhost:8080/pacientes/guardar', this.newPatient)
       .subscribe({
         next: (response) => {
           alert('Paciente registrado exitosamente');
@@ -196,4 +196,5 @@ export class AppComponent {
         }
       });
   }
+
 }
