@@ -14,10 +14,11 @@ interface Patient {
   escolaridad: string;
   estadoCivil: string;
   sexo: string;
-  anioNacimiento: number;
+  fechaNacimiento: string;
   tipoSangre: string;
   [key: string]: string | number;
 }
+
 interface Estudio {
   identificadorEstudio: string;
   unidadMedicaEnvia: string;
@@ -31,7 +32,6 @@ interface Estudio {
   };
 }
 
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -40,6 +40,7 @@ interface Estudio {
   imports: [CommonModule, FormsModule, HttpClientModule, QRCodeComponent]
 })
 export class AppComponent {
+  // Properties
   showSearchResults: boolean = false;
   searchNSS: string = '';
   patientData: Patient | null = null;
@@ -47,9 +48,24 @@ export class AppComponent {
   showQR: boolean = false;
   qrData: string = '';
   qrEstudiosData: string = '';
+  isNewPatientFormVisible: boolean = false;
+  newPatient: Patient = {
+    numeroSeguridadSocial: '',
+    numeroExpediente: '',
+    curp: '',
+    nombre: '',
+    primerApellido: '',
+    segundoApellido: '',
+    escolaridad: '',
+    estadoCivil: '',
+    sexo: '',
+    fechaNacimiento: '',
+    tipoSangre: ''
+  };
 
   constructor(private http: HttpClient) {}
 
+  // Methods
   getPatientKeys(): string[] {
     return Object.keys(this.patientData || {});
   }
@@ -61,7 +77,6 @@ export class AppComponent {
           next: (response) => {
             this.patientData = response;
             this.showSearchResults = true;
-            // Buscar estudios del paciente
             this.searchEstudios(this.searchNSS);
           },
           error: (error) => {
@@ -88,9 +103,7 @@ export class AppComponent {
   }
 
   formatKey(key: string): string {
-    // Capitalizar primera letra
     let formatted = key.charAt(0).toUpperCase() + key.slice(1);
-    // Insertar espacios antes de las mayúsculas
     return formatted.replace(/([A-Z])/g, ' $1').trim();
   }
 
@@ -103,7 +116,6 @@ export class AppComponent {
 
   generateQR() {
     if (this.patientData) {
-      // QR para datos del paciente
       this.qrData = JSON.stringify({
         nss: this.patientData.numeroSeguridadSocial,
         nombre: this.patientData.nombre,
@@ -114,11 +126,10 @@ export class AppComponent {
         curp: this.patientData.curp,
         escolaridad: this.patientData.escolaridad,
         estadoCivil: this.patientData.estadoCivil,
-        anioNacimiento: this.patientData.anioNacimiento,
+        fechaNacimiento: this.patientData.fechaNacimiento,
         tipoSangre: this.patientData.tipoSangre,
       });
 
-      // QR para estudios del paciente
       this.qrEstudiosData = JSON.stringify(this.estudios);
       this.showQR = true;
     }
@@ -129,7 +140,6 @@ export class AppComponent {
   }
 
   downloadQR() {
-    // Get the QR code elements
     const qrElements = document.querySelectorAll('qrcode canvas');
     const today = new Date();
     const day = today.getDate();
@@ -137,7 +147,6 @@ export class AppComponent {
     const year = today.getFullYear();
     const formattedDate = `${day}-${month}-${year}`;
 
-    // Download each QR code
     qrElements.forEach((qrElement, index) => {
       const canvas = qrElement as HTMLCanvasElement;
       const link = document.createElement('a');
@@ -146,5 +155,45 @@ export class AppComponent {
       link.href = canvas.toDataURL('image/png');
       link.click();
     });
+  }
+
+  showNewPatientForm() {
+    this.isNewPatientFormVisible = true;
+    this.showSearchResults = false;
+    this.patientData = null;
+    this.searchNSS = '';
+    this.estudios = [];
+  }
+
+  cancelNewPatient() {
+    this.isNewPatientFormVisible = false;
+    this.newPatient = {
+      numeroSeguridadSocial: '',
+      numeroExpediente: '',
+      curp: '',
+      nombre: '',
+      primerApellido: '',
+      segundoApellido: '',
+      escolaridad: '',
+      estadoCivil: '',
+      sexo: '',
+      fechaNacimiento: '',
+      tipoSangre: ''
+    };
+  }
+
+  submitNewPatient() {
+    this.http.post('http://localhost:8080/pacientes', this.newPatient)
+      .subscribe({
+        next: (response) => {
+          alert('Paciente registrado exitosamente');
+          this.isNewPatientFormVisible = false;
+          this.cancelNewPatient();
+        },
+        error: (error) => {
+          console.error('Error al registrar paciente:', error);
+          alert('Error al registrar el paciente');
+        }
+      });
   }
 }
