@@ -19,6 +19,13 @@ interface Patient {
   [key: string]: string | number;
 }
 
+interface RespuestaAPI {
+  datosEncriptados: {
+    encrypted_data: string;
+  };
+}
+
+
 interface Estudio {
   identificadorEstudio: string;
   unidadMedicaEnvia: string;
@@ -62,6 +69,8 @@ export class AppComponent {
     fechaNacimiento: '',
     tipoSangre: ''
   };
+
+  
 
   constructor(private http: HttpClient) {}
 
@@ -115,23 +124,33 @@ export class AppComponent {
   }
 
   generateQR() {
+    
     if (this.patientData) {
-      this.qrData = JSON.stringify({
-        nss: this.patientData.numeroSeguridadSocial,
-        nombre: this.patientData.nombre,
-        primerApellido: this.patientData.primerApellido,
-        segundoApellido: this.patientData.segundoApellido,
-        expediente: this.patientData.numeroExpediente,
-        sexo: this.patientData.sexo,
-        curp: this.patientData.curp,
-        escolaridad: this.patientData.escolaridad,
-        estadoCivil: this.patientData.estadoCivil,
-        fechaNacimiento: this.patientData.fechaNacimiento,
-        tipoSangre: this.patientData.tipoSangre,
-      });
+      // Primero obtener los datos encriptados
+      this.http.get<RespuestaAPI>(`http://localhost:8080/pacientes/encryptPaciente/${this.patientData.numeroSeguridadSocial}`)
+        .subscribe({
+          next: (encryptedData) => {
+            // Generar QR con los datos encriptados
+            this.qrData = JSON.stringify({
+              datosEncriptados: encryptedData
+            });
+            this.showQR = true;
+          },
+          error: (error) => {
+            console.error('Error al obtener datos encriptados:', error);
+            alert('Error al generar el código QR');
+          }
+        });
 
-      this.qrEstudiosData = JSON.stringify(this.estudios);
-      this.showQR = true;
+        this.http.get<RespuestaAPI>(`http://localhost:8080/pacientes/encryptEstudios/${this.patientData.numeroSeguridadSocial}`)
+        .subscribe({
+          next: (encryptedDataEstudios) => { 
+            this.qrEstudiosData = JSON.stringify(encryptedDataEstudios);
+            console.log('Datos que deberian estar en el QR:', this.qrEstudiosData);
+            this.showQR = true;
+          }
+        });
+
     }
   }
 
@@ -181,6 +200,23 @@ export class AppComponent {
       tipoSangre: ''
     };
   }
+
+  cleanNewPatient() {
+    this.newPatient = {
+      numeroSeguridadSocial: '',
+      numeroExpediente: '',
+      curp: '',
+      nombre: '',
+      primerApellido: '',
+      segundoApellido: '',
+      escolaridad: '',
+      estadoCivil: '',
+      sexo: '',
+      fechaNacimiento: '',
+      tipoSangre: ''
+    };
+  }
+
   submitNewPatient() {
     const nss = this.newPatient.numeroSeguridadSocial;
     
@@ -188,7 +224,7 @@ export class AppComponent {
     this.http.get(`http://localhost:8080/pacientes/${nss}`).subscribe({
       next: (existingPatient) => {
         alert('Ya existe un paciente con este número de seguridad social');
-      this.cancelNewPatient();
+      this.cleanNewPatient();
       },
       error: (error) => {
         // Si no existe el paciente, proceder a guardarlo
