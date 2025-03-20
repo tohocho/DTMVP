@@ -3,6 +3,7 @@ import { HttpClient, HttpClientModule, HttpHeaders, HttpParams } from '@angular/
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { QRCodeComponent } from 'angularx-qrcode';
+import jsQR from 'jsqr';
 
 interface Patient {
   numeroSeguridadSocial: string;
@@ -69,6 +70,8 @@ export class AppComponent {
     fechaNacimiento: '',
     tipoSangre: ''
   };
+  showQRUpload: boolean = false;
+  selectedFile: File | null = null;
 
   
 
@@ -142,11 +145,10 @@ export class AppComponent {
           }
         });
 
-        this.http.get<RespuestaAPI>(`http://localhost:8080/pacientes/encryptEstudios/${this.patientData.numeroSeguridadSocial}`)
+        this.http.get<RespuestaAPI>(`http://localhost:8080/estudios/encryptEstudios/${this.patientData.numeroSeguridadSocial}`)
         .subscribe({
           next: (encryptedDataEstudios) => { 
             this.qrEstudiosData = JSON.stringify(encryptedDataEstudios);
-            console.log('Datos que deberian estar en el QR:', this.qrEstudiosData);
             this.showQR = true;
           }
         });
@@ -247,6 +249,54 @@ export class AppComponent {
         }
       }
     });
+  }
+
+  showQRUploadForm() {
+    this.showQRUpload = true;
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.selectedFile = input.files[0];
+      this.readQRCode(this.selectedFile);
+    }
+  }
+
+  readQRCode(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (context) {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          context.drawImage(img, 0, 0);
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          if (code) {
+            console.log('Contenido del QR:', code.data);
+            try {
+              const qrData = JSON.parse(code.data);
+              console.log('Datos estructurados del QR:', qrData);
+            } catch (error) {
+              console.log('El contenido no es JSON válido');
+            }
+          } else {
+            console.log('No se encontró código QR en la imagen');
+          }
+        }
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  cancelQRUpload() {
+    this.showQRUpload = false;
+    this.selectedFile = null;
   }
 
 }
