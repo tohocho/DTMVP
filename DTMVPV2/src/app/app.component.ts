@@ -179,6 +179,12 @@ export class AppComponent {
     });
   }
 
+  downloadPatientPDF() {
+    if (this.patientData?.numeroSeguridadSocial) {
+      window.open(`http://localhost:8080/pacientes/info-pdf/${this.patientData.numeroSeguridadSocial}`, '_blank');
+    }
+  }
+
   showNewPatientForm() {
     this.isNewPatientFormVisible = true;
     this.showSearchResults = false;

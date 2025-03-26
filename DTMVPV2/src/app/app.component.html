@@ -54,7 +54,7 @@
     <div class="col-md-8 mx-auto">
       <div class="card">
         <div class="card-header bg-info text-white">
-          <h5 class="mb-0">Leer Código QR</h5>
+          <h5 class="mb-0">Ingresar código QR de paciente</h5>
         </div>
         <div class="card-body">
           <div class="mb-3">
@@ -90,7 +90,7 @@
             class="btn btn-info"
             type="button"
             (click)="showQRUploadForm()">
-            <i class="fas fa-qrcode"></i> Leer QR
+            <i class="fas fa-qrcode"></i> Registrar nuevo paciente con QR
           </button>
         </div>
         <div class="card-body">
@@ -193,6 +193,9 @@
               <button class="btn btn-secondary" (click)="closeQR()">Cerrar</button>
               <button class="btn btn-primary" (click)="downloadQR()">
                 <i class="fas fa-download"></i> Descargar QR
+              </button>
+              <button class="btn btn-danger" (click)="downloadPatientPDF()">
+                <i class="fas fa-file-pdf"></i> Descargar PDF
               </button>
             </div>
           </div>
