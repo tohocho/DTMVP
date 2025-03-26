@@ -72,6 +72,7 @@ export class AppComponent {
   };
   showQRUpload: boolean = false;
   selectedFile: File | null = null;
+  qrContent: string = '';
 
   
 
@@ -265,7 +266,7 @@ export class AppComponent {
 
   readQRCode(file: File) {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (e: any) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -277,11 +278,10 @@ export class AppComponent {
           const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
           const code = jsQR(imageData.data, imageData.width, imageData.height);
           if (code) {
-            console.log('Contenido del QR:', code.data);
+            this.qrContent = code.data;
             try {
-              const qrData = JSON.parse(code.data);
-              console.log('Datos estructurados del QR:', qrData);
-            } catch (error) {
+              const jsonData = JSON.parse(code.data);
+            } catch (e) {
               console.log('El contenido no es JSON válido');
             }
           } else {
@@ -289,7 +289,7 @@ export class AppComponent {
           }
         }
       };
-      img.src = e.target?.result as string;
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }
@@ -297,6 +297,42 @@ export class AppComponent {
   cancelQRUpload() {
     this.showQRUpload = false;
     this.selectedFile = null;
+  }
+
+  desencriptarDatos() {    
+    if (!this.qrContent) {
+      alert('Por favor, primero sube una imagen con un código QR');
+      return;
+    }
+    
+    this.http.post('http://localhost:8080/pacientes/desencriptar-datos', { datos: JSON.parse(this.qrContent) })
+      .subscribe({
+        next: (response: any) => {
+          if (response.datos) {
+            this.newPatient = {
+              numeroSeguridadSocial: response.datos.numeroSeguridadSocial || '',
+              numeroExpediente: response.datos.numeroExpediente || '',
+              curp: response.datos.curp || '',
+              nombre: response.datos.nombre || '',
+              primerApellido: response.datos.primerApellido || '',
+              segundoApellido: response.datos.segundoApellido || '',
+              escolaridad: response.datos.escolaridad || '',
+              estadoCivil: response.datos.estadoCivil || '',
+              sexo: response.datos.sexo || '',
+              fechaNacimiento: response.datos.fechaNacimiento || '',
+              tipoSangre: response.datos.tipoSangre || ''
+            };
+            this.isNewPatientFormVisible = true;
+            this.showQRUpload = false;
+          } else {
+            alert('Los datos desencriptados no tienen el formato esperado');
+          }
+        },
+        error: (error) => {
+          console.error('Error al desencriptar:', error);
+          alert('Error al desencriptar los datos. Por favor, intenta nuevamente.');
+        }
+      });
   }
 
 }
